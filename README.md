@@ -659,11 +659,6 @@ If this template helped you deploy production n8n:
 
 ---
 
-**Author:** [The Nguyen](https://nextgrowth.ai)  
-**Blog:** [NextGrowth.ai](https://nextgrowth.ai) - AI automation and self-hosting guides
----
-
-**Last Updated:** January 2026
 **Tested with:**
 - n8n: v2.1.4+
 - Coolify: v4.0+

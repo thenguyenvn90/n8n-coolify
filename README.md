@@ -614,13 +614,12 @@ This README covers essential deployment and troubleshooting. For advanced topics
 
 ### n8n Queue Mode Resources
 - **[n8n Queue Mode Architecture Deep-Dive](https://nextgrowth.ai/scaling-n8n-queue-mode-docker-compose/)** - Original manual deployment guide
-- **[Complete n8n Coolify Production Guide](https://nextgrowth.ai/n8n-queue-mode-coolify-production-guide/)** - Full tutorial with screenshots
+- **[Complete n8n Coolify Production Guide](https://nextgrowth.ai/n8n-queue-mode-coolify/)** - Full tutorial with screenshots
 - **[n8n Monitoring with Prometheus](https://nextgrowth.ai/n8n-monitoring-prometheus-grafana/)** - Advanced monitoring setup
 
 ### Official Documentation
 - **[n8n Queue Mode Docs](https://docs.n8n.io/hosting/scaling/queue-mode/)** - Official queue mode reference
 - **[Coolify Documentation](https://coolify.io/docs)** - Coolify platform docs
-- **[n8n Self-Hosting](https://docs.n8n.io/hosting/)** - General self-hosting guide
 
 ---
 

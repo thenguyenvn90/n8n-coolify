@@ -140,7 +140,7 @@ After selecting "N8N With Postgres And Worker," you'll be directed to the Config
 
 ---
 
-### 3.2 Replace with Production Docker Compose
+#### 3.2 Replace with Production Docker Compose
 
 **Critical:** Coolify's default template is good for testing but missing production essentials.
 
@@ -610,52 +610,6 @@ This README covers essential deployment and troubleshooting. For advanced topics
 
 ---
 
-## 🔒 Critical: Backup Encryption Key
-
-**⚠️ DO THIS IMMEDIATELY AFTER DEPLOYMENT:**
-
-```bash
-docker exec n8n-xxx printenv N8N_ENCRYPTION_KEY
-```
-
-**Save the output to:**
-- Password manager (1Password, Bitwarden, etc.)
-- Encrypted offline backup (encrypted USB drive)
-- Secure company vault/secrets manager
-
-### Why This Matters
-
-```mermaid
-graph TB
-    A[N8N_ENCRYPTION_KEY] --> B[Encrypts All Credentials]
-    B --> C[OpenAI API Keys]
-    B --> D[Stripe Keys]
-    B --> E[AWS Credentials]
-    B --> F[OAuth Tokens]
-    B --> G[Database Passwords]
-    
-    H[Lost Key] --> I[❌ ALL Credentials<br/>Permanently Lost]
-    I --> J[Cannot Decrypt]
-    I --> K[Must Re-enter<br/>Everything Manually]
-    
-    style A fill:#10B981
-    style H fill:#DC2626
-    style I fill:#DC2626
-```
-
-**If you lose this key:**
-- ❌ ALL stored credentials become permanently unrecoverable
-- ❌ OpenAI, Stripe, AWS, OAuth tokens cannot be decrypted
-- ❌ No recovery method exists
-- ❌ Must manually re-enter every credential in every workflow
-
-**Never:**
-- Commit encryption key to git repositories
-- Share via Slack, email, or unencrypted channels
-- Store in plain text files on the server
-
----
-
 ## 📚 Related Resources
 
 ### n8n Queue Mode Resources
@@ -667,113 +621,6 @@ graph TB
 - **[n8n Queue Mode Docs](https://docs.n8n.io/hosting/scaling/queue-mode/)** - Official queue mode reference
 - **[Coolify Documentation](https://coolify.io/docs)** - Coolify platform docs
 - **[n8n Self-Hosting](https://docs.n8n.io/hosting/)** - General self-hosting guide
-
----
-
-## ❓ Frequently Asked Questions
-
-### How much does this cost?
-
-**Total monthly cost: $20-40**
-- VPS (8GB RAM): $20-40/month (DigitalOcean, Hetzner, Vultr)
-- n8n: Free (self-hosted)
-- Coolify: Free (open-source)
-
-**Compare to:**
-- n8n Cloud: $100-500/month
-- Zapier: $300-800/month
-- Make.com: $200-600/month
-
-**Savings: $80-760/month**
-
----
-
-### How often should I update n8n?
-
-**Recommended: Monthly**
-
-Update process in Coolify:
-```
-Service → Advanced → Pull Latest Images & Restart
-```
-
-**Before updating:**
-- Backup encryption key (if not already done)
-- Test in staging environment (if available)
-- Check [n8n changelog](https://github.com/n8n-io/n8n/releases) for breaking changes
-
----
-
-### Is coding knowledge required?
-
-**No coding needed for deployment:**
-1. Copy docker-compose.yml
-2. Replace Redis password (3 locations)
-3. Adjust timezone
-4. Click Deploy in Coolify
-
-**Basic command-line knowledge helps with:**
-- Troubleshooting (reading logs)
-- Verification (running docker commands)
-- Advanced customization
-
----
-
-### Can I host multiple applications on the same Coolify server?
-
-**Yes!** Coolify is designed for multi-app hosting.
-
-Each application gets:
-- Isolated Docker containers
-- Separate domain/subdomain
-- Independent SSL certificates
-- Dedicated resources
-
-**Example setup:**
-- `n8n.yourdomain.com` - This n8n deployment
-- `wordpress.yourdomain.com` - WordPress site
-- `app.yourdomain.com` - Custom application
-
----
-
-### What workflows can I run with this?
-
-**Perfect for:**
-- AI content generation (GPT-4, Claude, Gemini workflows)
-- Data processing pipelines (ETL, transformations)
-- API integrations (Stripe, Shopify, Airtable, etc.)
-- Webhook processing (real-time event handling)
-- Scheduled automation (reports, backups, notifications)
-- Internal tool orchestration
-
-**Queue mode enables:**
-- 15 parallel workflow executions (vs 1 in default mode)
-- High-volume webhook processing
-- AI-heavy workloads without UI freezing
-- Horizontal scaling as demand grows
-
----
-
-### How do I migrate from n8n Cloud or another platform?
-
-**Migration steps:**
-
-1. **Export from current platform:**
-   - n8n Cloud: Settings → Export workflows
-   - Zapier/Make: Manual reconstruction (no direct export)
-
-2. **Deploy this template** (follow Quick Start guide)
-
-3. **Import workflows:**
-   - n8n UI → Workflows → Import from File
-
-4. **Reconfigure credentials:**
-   - All API keys must be re-entered (encrypted differently)
-
-5. **Test thoroughly** before decommissioning old platform
-
-**For detailed migration guide:**  
-👉 [Complete Production Guide - Migration Section](https://nextgrowth.ai/n8n-queue-mode-coolify-production-guide/#migration)
 
 ---
 
@@ -814,8 +661,7 @@ If this template helped you deploy production n8n:
 ---
 
 **Author:** [The Nguyen](https://nextgrowth.ai)  
-**Blog:** [NextGrowth.ai](https://nextgrowth.ai) - AI automation and self-hosting guides  
-
+**Blog:** [NextGrowth.ai](https://nextgrowth.ai) - AI automation and self-hosting guides
 ---
 
 **Last Updated:** January 2026

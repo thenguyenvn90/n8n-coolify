@@ -19,6 +19,7 @@
 #    ✅ 14-day execution pruning
 #    ✅ Full metrics for AI cost tracking
 #    ✅ Production security hardening
+#    ✅ Healthchecks for all services
 #
 # ============================================================================
 
@@ -154,11 +155,25 @@ services:
     # ========================================================================
     # SERVICE DEPENDENCIES
     # ========================================================================
-    # Start n8n only after these services are running
-    # Note: No healthchecks used (they caused issues in testing)
+    # Start n8n only after PostgreSQL and Redis are healthy
     depends_on:
-      - postgresql
-      - redis
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    
+    # ========================================================================
+    # HEALTH CHECK
+    # ========================================================================
+    # Monitors n8n availability for Coolify and Docker orchestration
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -qO- http://127.0.0.1:5678/healthz || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     
     # ========================================================================
     # RESTART POLICY
@@ -259,9 +274,27 @@ services:
     # ========================================================================
     # SERVICE DEPENDENCIES
     # ========================================================================
+    # Start worker only after n8n main, PostgreSQL, and Redis are healthy
     depends_on:
-      - postgresql
-      - redis
+      n8n:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    
+    # ========================================================================
+    # HEALTH CHECK
+    # ========================================================================
+    # Monitors worker availability and readiness
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -qO- http://127.0.0.1:5678/healthz/readiness || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     
     restart: unless-stopped
     
@@ -299,6 +332,19 @@ services:
       - POSTGRES_PASSWORD=$SERVICE_PASSWORD_POSTGRES
       - POSTGRES_DB=n8n
       - TZ=Asia/Singapore
+    
+    # ========================================================================
+    # HEALTH CHECK
+    # ========================================================================
+    # Verifies PostgreSQL is ready to accept connections
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     
     restart: unless-stopped
     
@@ -372,6 +418,23 @@ services:
       
     environment:
       - TZ=Asia/Singapore
+    
+    # ========================================================================
+    # HEALTH CHECK
+    # ========================================================================
+    # Verifies Redis is responding to commands
+    # Note: Uses AUTH with password for authenticated ping
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - -a
+        - REPLACE_WITH_YOUR_REDIS_PASSWORD
+        - ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
     
     restart: unless-stopped
     

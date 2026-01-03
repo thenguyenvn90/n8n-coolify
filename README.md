@@ -187,9 +187,9 @@ openssl rand -base64 16
 
 | Location | Line # | What to Find |
 |----------|--------|--------------|
-| **n8n main** | ~35 | `QUEUE_BULL_REDIS_PASSWORD=REPLACE_WITH_YOUR_REDIS_PASSWORD` |
-| **n8n worker** | ~88 | `QUEUE_BULL_REDIS_PASSWORD=REPLACE_WITH_YOUR_REDIS_PASSWORD` |
-| **Redis command** | ~170 | `- REPLACE_WITH_YOUR_REDIS_PASSWORD` |
+| **n8n main** | ~92 | `QUEUE_BULL_REDIS_PASSWORD=REPLACE_WITH_YOUR_REDIS_PASSWORD` |
+| **n8n worker** | ~227 | `QUEUE_BULL_REDIS_PASSWORD=REPLACE_WITH_YOUR_REDIS_PASSWORD` |
+| **Redis command** | ~341 | `- REPLACE_WITH_YOUR_REDIS_PASSWORD` |
 
 **⚠️ All three MUST be identical** (most common deployment failure)
 
@@ -214,7 +214,7 @@ graph LR
 
 **Why:** Ensures scheduled workflows run at correct times.
 
-**Update in 4 locations** (lines ~40, ~95, ~145, ~180):
+**Update in 4 locations**:
 
 ```yaml
 - GENERIC_TIMEZONE=Asia/Singapore  # ← Change this
@@ -239,7 +239,7 @@ graph LR
 
 **Why:** Controls how many workflows run in parallel.
 
-**Adjust based on your VPS** (line ~90):
+**Adjust based on your VPS** (line ~201):
 
 | VPS RAM | CPU Cores | Recommended Concurrency |
 |---------|-----------|------------------------|

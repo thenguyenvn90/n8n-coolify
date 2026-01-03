@@ -317,7 +317,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}"
 ```
 NAMES                STATUS
 n8n-xxx              Up (healthy)
-n8n-worker-xxx       Up
+n8n-worker-xxx       Up (healthy)
 postgresql-xxx       Up (healthy)
 redis-xxx            Up (healthy)
 ```

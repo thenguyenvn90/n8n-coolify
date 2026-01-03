@@ -95,6 +95,12 @@ This template preserves the **production optimizations** from manual deployments
 
 ## 🚀 Deployment Steps
 
+### 📺 Video Tutorial
+
+[![Watch the tutorial](https://img.youtube.com/vi/snszVmvxTug/maxresdefault.jpg)](https://www.youtube.com/watch?v=snszVmvxTug)
+
+**[🎬 Watch: Secure n8n Queue Mode with Coolify - Advanced Configuration](https://www.youtube.com/watch?v=snszVmvxTug)**
+
 ### Step 1: Create a New Project in Coolify
 
 1. **Log into your Coolify dashboard**
@@ -197,9 +203,9 @@ openssl rand -base64 16
 
 ```mermaid
 graph LR
-    A[Your Password:<br/>6+tzZVrH4gIXtEzQnIbPHw==] --> B[Location 1<br/>n8n Main<br/>Line 35]
-    A --> C[Location 2<br/>n8n Worker<br/>Line 88]
-    A --> D[Location 3<br/>Redis Command<br/>Line 170]
+    A[Your Password:<br/>6+tzZVrH4gIXtEzQnIbPHw==] --> B[Location 1<br/>n8n Main]
+    A --> C[Location 2<br/>n8n Worker]
+    A --> D[Location 3<br/>Redis Command]
     
     style A fill:#F59E0B
     style B fill:#10B981
@@ -239,7 +245,7 @@ graph LR
 
 **Why:** Controls how many workflows run in parallel.
 
-**Adjust based on your VPS** (line ~201):
+**Adjust based on your VPS**:
 
 | VPS RAM | CPU Cores | Recommended Concurrency |
 |---------|-----------|------------------------|

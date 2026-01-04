@@ -103,6 +103,7 @@ services:
       - N8N_GIT_NODE_DISABLE_BARE_REPOS=true  # Security: Disable bare git repos
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true  # Enforce file permissions
       - N8N_PROXY_HOPS=1                  # Number of proxy hops (for Coolify/Traefik)
+      - N8N_USER_MANAGEMENT_DISABLED=true
       
       # ======================================================================
       # TASK RUNNERS (Code Execution Isolation)
@@ -251,6 +252,7 @@ services:
       - N8N_GIT_NODE_DISABLE_BARE_REPOS=true
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
       - N8N_PROXY_HOPS=1
+      - N8N_USER_MANAGEMENT_DISABLED=true
       
       # ======================================================================
       # TASK RUNNERS (Same as main instance)

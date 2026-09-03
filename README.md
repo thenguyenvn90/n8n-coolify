@@ -671,3 +671,54 @@ If this template helped you deploy production n8n:
 - Docker: v24.0+
 - PostgreSQL: 16
 - Redis: 7
+
+---
+
+## Operating this on Coolify: two things that cost real time
+
+Both of these were hit on a live Coolify instance running this stack.
+
+### "Restart" is down-then-up, and the up may not happen
+
+Coolify's **Restart** on a service is not a restart in the Docker sense. It takes the
+containers down and brings them back, and the bringing-back can fail silently — the
+service is left with no containers at all, and the API reports `degraded:unhealthy`.
+Neither **Restart** nor **Start** recovered it; only **Deploy** recreated the
+containers.
+
+If you change an environment variable, use **Deploy**, not **Restart**. And check the
+queue is idle first:
+
+```bash
+docker exec <redis-container> redis-cli llen bull:jobs:wait
+docker exec <redis-container> redis-cli llen bull:jobs:active
+```
+
+Both zero means nothing is mid-execution and the restart costs nothing.
+
+### Traefik metrics need their own entrypoint, and Coolify's proxy has none
+
+Coolify's own `coolify-proxy` serves `:80` and `:443` and nothing else, so
+`--metrics.prometheus=true` alone gives you a metrics endpoint with no way in. Add all
+three lines to the proxy configuration (Servers → your server → Proxy), not just the
+first:
+
+```
+--entrypoints.metrics.address=:8082
+--metrics.prometheus=true
+--metrics.prometheus.entryPoint=metrics
+```
+
+Port 8082 stays on the Docker network and is never published to the host. Restarting
+the proxy briefly drops every site on the box, so do it when things are quiet.
+
+This is worth doing early for one reason: request rate is the only series that cannot
+be backfilled. Every day without it is a day of traffic history that will never exist.
+
+### If you add your own service behind Coolify's proxy
+
+Do not reference a Traefik middleware that another container defines. Traefik keeps
+the HTTP router and **silently drops the HTTPS one**: port 80 redirects correctly,
+port 443 hangs with no certificate, and not one line appears in the proxy log. A
+container on more than one network also needs `traefik.docker.network` pinned, or the
+proxy may pick the network it cannot reach.

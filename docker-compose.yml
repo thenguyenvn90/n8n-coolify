@@ -4,7 +4,7 @@
 #
 #  Architecture:
 #    - Main Instance: UI, webhooks, schedules, API
-#    - Worker: Executes workflows (15 concurrent jobs)
+#    - Worker: Executes workflows (10 concurrent jobs by default)
 #    - PostgreSQL: Workflow data and execution history
 #    - Redis: Queue for job distribution
 #    - Task Runners: Internal JavaScript execution (v2.0+ default)
@@ -13,11 +13,11 @@
 #
 #  Key Features:
 #    ✅ Queue mode with horizontal scaling
-#    ✅ 15 concurrent worker jobs
+#    ✅ 10 concurrent worker jobs, with the tuning rule inline
 #    ✅ Internal task runners (automatic code isolation)
 #    ✅ 1GB Redis queue
 #    ✅ 14-day execution pruning
-#    ✅ Full metrics for AI cost tracking
+#    ✅ Full metrics: queue, db pool, webhooks, execution data, AI cost
 #    ✅ Production security hardening
 #    ✅ Healthchecks for all services
 #
@@ -82,6 +82,10 @@ services:
       - DB_POSTGRESDB_USER=$SERVICE_USER_POSTGRES      # Coolify-provided
       - DB_POSTGRESDB_SCHEMA=public
       - DB_POSTGRESDB_PASSWORD=$SERVICE_PASSWORD_POSTGRES  # Coolify-provided
+      # The main shares this pool with the worker. Concurrency multiplies demand
+      # on it, and exhausting it is a documented queue-mode failure that looks
+      # like slowness rather than an error.
+      - DB_POSTGRESDB_POOL_SIZE=20
       
       # ======================================================================
       # QUEUE MODE CONFIGURATION (Redis)
@@ -116,13 +120,39 @@ services:
       # ======================================================================
       # METRICS & MONITORING
       # ======================================================================
-      # Exposes Prometheus metrics at /metrics endpoint
-      # Use for: AI cost tracking, performance monitoring, alerting
+      # Exposes Prometheus metrics at /metrics endpoint.
+      # Only DEFAULT_METRICS and WORKFLOW_EXECUTION_DURATION are on by default;
+      # everything else here is opt-in.
       - N8N_METRICS=true
-      - N8N_METRICS_INCLUDE_DEFAULT_METRICS=true  # CPU, memory, etc.
-      - N8N_METRICS_INCLUDE_QUEUE_METRICS=true    # Queue depth, job rate
-      - N8N_METRICS_INCLUDE_WORKFLOW_ID_LABEL=true  # Track per-workflow
-      - N8N_METRICS_INCLUDE_NODE_TYPE_LABEL=true    # Track per-node type
+      - N8N_METRICS_INCLUDE_DEFAULT_METRICS=true   # CPU, heap, event-loop lag, fds
+      # The four n8n_scaling_mode_queue_jobs_* counters. Main-only by design, and
+      # polled on an interval rather than live: a burst shorter than the interval
+      # is invisible, and the completed/failed counters lose whatever the main
+      # missed across a restart. 20s is the default and too coarse to see a burst.
+      - N8N_METRICS_INCLUDE_QUEUE_METRICS=true
+      - N8N_METRICS_QUEUE_METRICS_INTERVAL=5
+      # Pool active/idle/max/pending plus an acquire histogram. This is the ceiling
+      # that concurrency competes for, so it belongs on the screen BEFORE anyone
+      # raises the worker's number — pool exhaustion is a documented queue-mode
+      # failure and it presents as slowness, not as an error.
+      - N8N_METRICS_INCLUDE_DB_POOL_METRICS=true
+      # How work arrives: duration by method, status code, path and workflow.
+      - N8N_METRICS_INCLUDE_WEBHOOK_METRICS=true
+      # n8n_last_activity plus an HTTP request histogram.
+      - N8N_METRICS_INCLUDE_API_ENDPOINTS=true
+      # What each run leaves behind — at volume this is what fills the disk.
+      - N8N_METRICS_INCLUDE_EXECUTION_DATA_METRICS=true
+      - N8N_METRICS_INCLUDE_CACHE_METRICS=true
+      # workflow_id on the execution histogram, plus a gauge mapping id to name so
+      # dashboards show names rather than ids. Roughly 3,800 series at 35 workflows.
+      - N8N_METRICS_INCLUDE_WORKFLOW_ID_LABEL=true
+      - N8N_METRICS_INCLUDE_WORKFLOW_INFO=true
+      # NODE_TYPE_LABEL is deliberately NOT set. On its own it adds nothing — it
+      # labels event-bus node counters only, and those need
+      # N8N_METRICS_INCLUDE_MESSAGE_EVENT_BUS_METRICS. Enabling that pair
+      # multiplies event x workflow x node type, which is where cardinality gets
+      # away from you. Setting the label alone reads like per-node tracking and
+      # delivers nothing.
       
       # ======================================================================
       # N8N v2.0+ REQUIRED SETTINGS
@@ -213,8 +243,29 @@ services:
     
     # Worker Command
     # --------------
-    # Start n8n in worker mode with concurrency setting
-    command: worker --concurrency=15
+    # Start n8n in worker mode. --concurrency is a CLI flag with no environment
+    # fallback — confirmed from `n8n worker --help` on a running container — so it
+    # can only be set here, and changing it means editing this file and deploying.
+    #
+    # 10 is n8n's own default; n8n logs a warning below 5 that the environment may
+    # be unstable. This used to read 15, which is a fine number on 4+ vCPU and an
+    # optimistic one on 2.
+    #
+    # How to know which number is right, rather than guessing:
+    #
+    #   slots busy, worker CPU under ~0.5 cores, event-loop lag under 50ms
+    #     -> I/O-bound and slot-starved. Raise this. Free throughput.
+    #   slots busy, worker CPU near 1.0 cores, lag rising
+    #     -> CPU-bound. Add a SECOND worker container instead. A Node worker runs
+    #        one JS thread and saturates near one core however many the host has,
+    #        so a higher number here only inflates per-job latency.
+    #   slots under 60% busy
+    #     -> not slot-limited at all; leave this alone.
+    #
+    # Check n8n_db_pool_requests_pending before any increase. Concurrency
+    # multiplies demand on the connection pool, and exhausting it is a documented
+    # queue-mode failure that presents as slowness rather than an error.
+    command: worker --concurrency=10
     
     environment:
       # ======================================================================
@@ -233,6 +284,12 @@ services:
       - DB_POSTGRESDB_USER=$SERVICE_USER_POSTGRES
       - DB_POSTGRESDB_SCHEMA=public
       - DB_POSTGRESDB_PASSWORD=$SERVICE_PASSWORD_POSTGRES
+      # Concurrency multiplies demand on this pool; exhausting it is a documented
+      # queue-mode failure that looks like slowness, not an error. Raise it in the
+      # same change as any concurrency increase, and watch
+      # n8n_db_pool_requests_pending, which is above zero only when work is
+      # blocked here rather than on the network.
+      - DB_POSTGRESDB_POOL_SIZE=20
       
       # ======================================================================
       # QUEUE MODE (Same as main instance)
